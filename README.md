@@ -471,3 +471,126 @@ It is better to use table which has less data to become faster.
 ![Untitled (49)](https://user-images.githubusercontent.com/99462935/161223682-082acf88-ab38-45f7-be88-5ce1685cc148.png)
 
 Figure: Assignment for using correlated subqueries to find employees who have min and max salary in each department 
+
+## 8: Working with Multiple Tables
+### 38. Introducing Table Joins
+
+Joins is a technique to link data together on a common column. It is similar to subquery. 
+
+Join can join multiple tables. 
+
+"SELECT first_name, country
+FROM employees, regions
+WHERE employees.region_id = regions.region_id" is a joining data. Joining two tables on these two columns, the region_id. 
+
+"SELECT first_name, email, division
+FROM employees, departments
+WHERE employees.department = departments.department
+AND email IS NOT NULL" code gives data from two table for the records who have email addresses.
+
+"SELECT first_name, email, employees.department, division, country
+FROM employees, departments, regions
+WHERE employees.department = departments.department
+AND employees.region_id = regions.region_id
+AND email IS NOT NULL" gives data from three different tables.
+
+![Untitled (50)](https://user-images.githubusercontent.com/99462935/161223957-ff979b9a-0621-4591-b513-4fd88397c6de.png)
+
+Figure: My code for assignment: Calculate number of employees in each country
+
+"SELECT first_name, email, e.department, division, country
+FROM employees e, departments d, regions r
+WHERE e.department = d.department
+AND e.region_id = r.region_id
+AND email IS NOT NULL"  gives data from three different tables with aliases.
+
+We used in e.department since department is in both two tables.
+
+"SELECT country, count(*)
+FROM employees e, (SELECT * FROM regions) r
+WHERE e.region_id = r.region_id
+GROUP BY country" cod. In this code "(SELECT * FROM regions)" is non correlated subquery since it doesnt get any data from outside of subquery.
+
+### 39. INNER and OUTER Joins +[EXERCISES]
+
+"SELECT first_name, country
+FROM employees INNER JOIN regions
+ON employees.region_id = regions.region_id WHERE email IS NOT NULL" provides join of two tables with inner join.
+
+"SELECT first_name, email, division, country
+FROM employees INNER JOIN departments
+ON employees.department = departments.department
+INNER JOIN regions
+ON employees.region_id = regions.region_id
+WHERE email IS NOT NULL" **code gives that first employees and departments table are joined together. Then regions table is joined to this combined table. If we add a new table, this table would be joining with the result sets of combining all of this data together.**
+
+If some employees were assigned to departments that did not exist in departments table, then we need to use OUTER JOIN.
+
+"SELECT distinct department FROM employees
+-- 27 departments
+
+SELECT distinct department FROM departments
+-- 24 departments
+
+SELECT distinct employees.department, departments.department
+FROM employees INNER JOIN departments
+ON employees.department = departments.department" gives common departments that are included in both tables (23 departments).
+
+In order to show outer departments that do not involve in both tables can be found with LEFT JOIN
+
+"SELECT distinct employees.department, departments.department
+FROM employees LEFT JOIN departments
+ON employees.department = departments.department" shows all departments in employees table regardless these departments are included in department table. This shows 27 department. "departments.department" table has some NULL records when these departments are not exist in departments table.
+
+"SELECT distinct employees.department, departments.department
+FROM employees RIGHT JOIN departments
+ON employees.department = departments.department" shows all departments in department table regardless these departments are included in employees table. This shows 24 department. "employees.department" table has some NULL records when these departments are not exist in employees table.
+
+![Untitled (51)](https://user-images.githubusercontent.com/99462935/161224202-8f7961e0-de72-469d-b981-560806bc2fc6.png)
+
+Figure: My code for assignment: Find departments that only exist in employees table
+
+"SELECT distinct employees.department
+FROM employees FULL OUTER JOIN departments
+ON employees.department = departments.department" code gives 28 rows with all departments. One of them is NULL which only exist in departments table
+
+### 40. Using UNION, UNION ALL and EXCEPT Clauses + [EXERCISES]
+
+UNION used to stack one set of data on top another.
+
+"SELECT department FROM employees
+-- 27 departments
+UNION
+SELECT department FROM departments
+-- 24 departments" code take department in employees and stack it into department in departments and eliminate duplicates. 
+
+"SELECT distinct department FROM employees
+-- 27 departments
+UNION ALL
+SELECT department FROM departments
+-- 24 departments" code take department in employees and stack it into department in departments and UNION ALL does not eliminate duplicates. 
+
+"SELECT distinct department, region_id FROM employees
+-- 27 departments
+UNION ALL
+SELECT department FROM departments
+-- 24 departments" code does not work since upside has two columns and bottom side has one column
+
+"SELECT distinct department, region_id FROM employees
+-- 27 departments
+UNION ALL
+SELECT department, division FROM departments
+-- 24 departments" code does not work since region_id is integer and division is string. Data type must be same.
+
+ORDER BY can be used for all query that is UNION.  ORDER BY department sorts the UNION data alphabetically.
+
+"SELECT distinct department FROM employees
+-- 27 departments
+EXCEPT
+SELECT department FROM departments
+-- 24 departments" find departments that only exist in employees table
+
+![Untitled (52)](https://user-images.githubusercontent.com/99462935/161224407-0a15b924-8214-443a-a254-0cc9d56aeba3.png)
+
+Figure: My code for assignment to show employees in each department and total number of employees
+
