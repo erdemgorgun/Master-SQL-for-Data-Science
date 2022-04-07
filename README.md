@@ -594,3 +594,210 @@ SELECT department FROM departments
 
 Figure: My code for assignment to show employees in each department and total number of employees
 
+### 41. Cartesian Product with the CROSS JOIN
+Cartesian product occurs when there is no joins. 
+
+"SELECT COUNT(*) FROM employees, departments" every single combination between two table returns. It is called cartesian product. 24 x1000 = 24000 records are returned. 
+
+"SELECT COUNT(*) FROM employees a, employees b" every single combination between two identical table returns. It is called cartesian product. 1000x1000 = 1000000 records are returned. 
+
+"SELECT COUNT(*) FROM employees a CROSS JOIN employees b" every single combination between two identical table returns. It is called cartesian product. 1000x1000 = 1000000 records are returned.
+
+### 42. [EXERCISES]: Joins and Subqueries Continued
+
+![Untitled (54)](https://user-images.githubusercontent.com/99462935/162204899-bcee91cb-2ddd-444e-8b4a-51bcee0593ea.png)
+
+Figure: My code for assignment: Employees who have earliest and latest hiring date
+
+UNION ALL also sort by written code.
+
+![Untitled (55)](https://user-images.githubusercontent.com/99462935/162205129-98aca936-a763-494f-95d0-eb898688bcae.png)
+
+Figure: My code for assignment: sum of salary of each employee who is hiring his hiring date and 90 days before
+
+SUM is going to change that is not accumulated which is called moving range.
+
+### 43. Creating Views vs Inline Views
+
+A view is like virtual table. It is generated with SQL query. You cant insert or delete data to view.  
+
+All kind of queries until this point can be generated with views.
+
+"SELECT first_name, email, e.department, salary,
+division, region, country
+FROM employees e, departments d, regions r
+WHERE e.department = d.department
+AND e.region_id = r.region_id" code is an example of combining columns in different tables.
+
+"CREATE VIEW v_employee_information as
+SELECT first_name, email, e.department, salary,
+division, region, country
+FROM employees e, departments d, regions r
+WHERE e.department = d.department
+AND e.region_id = r.region_id" creates a view table and we can look this table with "SELECT * FROM v_employee_information" code (hard view). You cannot insert or delete data to view.
+
+"SELECT * FROM (select * from departments)" code is inline view. Hard view is provide more flexibility.
+
+View can be used instead of joins and make our life easier.
+
+### 44. Assignment 7: ADVANCED Problems using Joins, Grouping and Subqueries
+
+![Untitled (56)](https://user-images.githubusercontent.com/99462935/162205994-1b2a11b5-7e31-4d13-90f4-213968294c21.png)
+
+Figure: This is my code for the assignment. I am not sure how to combine last name of professors in one column for each course
+
+![Untitled (57)](https://user-images.githubusercontent.com/99462935/162206169-75125302-11cb-4708-9cef-0c79563b90a2.png)
+
+Figure: Answer of Question 6
+
+![Untitled (58)](https://user-images.githubusercontent.com/99462935/162206299-ceb42cff-1da7-4719-8583-ed4479d2743d.png)
+
+Figure: Answer of Question 7. I used a different solution to show all students and all course names. I used cross product and it is different than the solution code.
+
+## 9: Window Functions for Analytics
+### 45. Window Functions using the OVER() Clause
+
+Window function allows s to slice and dice of data. It is analytical functions.
+
+"select first_name, department,
+(select count(*) from employees e1
+where e1.department = e2. department)
+from employees e2
+group by department, first_name" shows 999 columns since there are two employees who have same name.
+
+Above code is using subquery and it is slow and expensive. Instead of subquery we can use window function.
+
+"select first_name, department,
+count(*) over()
+from employees e2" gives the count overall 1000. 
+
+"select first_name, department,
+count(*) over(partition by department)
+from employees e2" returns name, department and number of employees in corresponding department with 1000 columns. 
+
+"select first_name, department,
+sum(salary) over(partition by department)
+from employees e2" returns name, department and total salary paid in corresponding department with 1000 columns. 
+
+"select first_name, department,
+count(**) over(partition by department) dept_count,
+count(**) over(partition by region_id) region_count
+from employees e2" returns name, department, number of employees in corresponding department and region with 1000 columns. 
+
+Note that where clause limits count(*) over(). For example "select first_name, department,
+count(*) over()
+from employees
+where region_id = 3" shows third column as 145 values for all 145 columns. Where clause changes the result of over function.
+
+In a query first from clause works. Multiple tables are joined. After that where clause is run. Where clause filter the data.  After that select clause is evaluated.
+
+### 46. Ordering Data in Window Frames
+
+Window compute an aggregation. Window changes based on partition.
+
+"select first_name, hire_date, salary,
+sum(salary)
+over(order by hire_date range between unbounded preceding
+and current row) as run_total_of_salaries
+from employees" code gives in fourth column the sum of salaries upper rows and current row
+
+All the rows that proceded our part of frame in the window. Previous rows are part of this frame. As we proceed down to list we get more row and add it to sum of salary. 
+
+We can delete "range between unbounded preceding
+and current row" code because it calculates upper row and current row by default.
+
+"select first_name, hire_date, salary,
+sum(salary)
+over (partition by department order by hire_date) as run_total_of_salaries
+from employees" code gives fourth column the sum of salaries upper rows and current row by department
+
+"select first_name, hire_date, salary,
+sum(salary) over(order by hire_date rows between 1
+preceding and current row)
+from employees"  code gives fourth column sum of current column and one previous column.
+
+### 47. RANK, FIRST_VALUE and NTILE Functions
+
+"select first_name, email, department, salary,
+RANK() OVER (PARTITION BY department ORDER BY salary DESC)
+FROM employees" code gives employees in each department order by salary and show their salary rank in their department.
+
+"select * from (
+select first_name, email, department, salary,
+RANK() OVER (PARTITION BY department ORDER BY salary DESC)
+FROM employees
+) a
+WHERE rank = 8" code shows only employees whose salary rank in their department is 8 
+
+"select first_name, email, department, salary,
+RANK() OVER (PARTITION BY department ORDER BY salary DESC)
+FROM employees
+WHERE rank = 8" code doesnt work because rank column runs after where column. Therefore code doesnt know the rank in where clause
+
+"select first_name, email, department, salary,
+NTILE(5) OVER (PARTITION BY department ORDER BY salary DESC)
+FROM employees" code gives rank for each 5 employees. 5 highest salary employees are ranked as 1. 
+
+"select first_name, email, department, salary,
+first_value(salary) OVER (PARTITION BY department ORDER BY salary DESC)
+FROM employees" code gives fourth column max salary of this department for all rows of corresponding department. "first_value" function provides ordering by a parameter.
+
+"select first_name, email, department, salary,
+nth_value(salary, 5) OVER
+(PARTITION BY department ORDER BY salary asc)
+first_value
+FROM employees" code gives fourth column as fifth highest salary for department in each column.
+
+
+### 48. LEAD and LAG Functions
+
+Lead and lag is used to get values from a role that is directly above or below currently processing row.  
+
+"select first_name, last_name,salary,
+LEAD(salary)OVER() closest_lower_salary
+FROM employees" code gives fourth column as a shift one row up salary. For example first row of fourth column gives salary of second employee. 
+
+"select first_name, last_name,salary,
+LAG(salary)OVER() closest_higher_salary
+FROM employees" code gives fourth column as a shift one row up salary. For example second row of fourth column gives salary of first employee.
+
+### 49. Working with Rollups and Cubes
+
+"select continent, country, city, sum(units_sold)
+from sales
+GROUP BY GROUPING SETS(continent, country, city)" code gives sum of unit_sold for each continent in upper rows, sum of unit sold for each country in middle rows, sum of unit_sold for each city in bottom rows. 
+
+If we change as "GROUP BY GROUPING SETS(continent, country, city, ())", it adds a column that gives total unit_sold of all country, continent or city.
+
+"select continent, country, city, sum(units_sold)
+from sales
+GROUP BY ROLLUP(continent, country, city)" code gives the amount if we were a group by just one, two and three of the columns with ROLLUP command.
+
+"select continent, country, city, sum(units_sold)
+from sales
+GROUP BY CUBE(continent, country, city)" code gives the amount if we were a group by all combinations of one, two and three of the columns with CUBE
+
+## 10: Difficult Query Challenges
+### 50. Challenging Puzzles For the Brave
+
+![Untitled (59)](https://user-images.githubusercontent.com/99462935/162208312-76831ba7-eab2-4e33-8f61-2d7f75531fff.png)
+
+Figure: My code for first assignment. I catch four of the students and miss last three of them. I looked at solution and understand.
+
+![Untitled (60)](https://user-images.githubusercontent.com/99462935/162208553-2fed45c7-94d7-4cf9-9af1-f6e540e6f763.png)
+
+Figure: My code for the second assignment gives correct result but I think my and function does not work correct. I checked and understand the solution. 
+
+![Untitled (61)](https://user-images.githubusercontent.com/99462935/162208706-9f625217-c8c7-44b4-90a2-62ab0cef695d.png)
+
+Figure: My code for the third assignment to find students who take CS 220 and not take other courses
+
+![Untitled (62)](https://user-images.githubusercontent.com/99462935/162208848-f64ad107-1984-4bc1-a3ab-d6bc1bc7b0f4.png)
+
+Figure: My code for the fourth assignment to find students who take only one course
+
+![Untitled (63)](https://user-images.githubusercontent.com/99462935/162209020-1df542e8-cfb1-4700-92d6-496fdaa784ad.png)
+
+Figure: Fifth code assignment to show students who has older than two students at most
+
+
